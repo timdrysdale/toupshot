@@ -1,5 +1,8 @@
+import datetime
+import numpy as np
+from PIL import Image
 import toupcam
-
+ 
 class App:
     def __init__(self):
         self.hcam = None
@@ -18,6 +21,13 @@ class App:
                 self.hcam.PullImageV2(self.buf, 24, None)
                 self.total += 1
                 print('pull image ok, total = {}'.format(self.total))
+                #do something with the image here ...
+ 
+                ts = datetime.datetime.now().timestamp()
+                array = bytes_to_array(self.buf, self.width, self.height)
+                img = Image.fromarray(array)
+                img.save('image-%d.png'%(ts))
+                
             except toupcam.HRESULTException:
                 print('pull image failed')
         else:
@@ -33,6 +43,8 @@ class App:
             if self.hcam:
                 try:
                     width, height = self.hcam.get_Size()
+                    self.width = width
+                    self.height = height
                     bufsize = ((width * 24 + 31) // 32 * 4) * height
                     print('image size: {} x {}, bufsize = {}'.format(width, height, bufsize))
                     self.buf = bytes(bufsize)
@@ -51,6 +63,16 @@ class App:
         else:
             print('no camera found')
 
+def bytes_to_array(data, width, height):
+
+    # convert bytes into array - need to know image dims and data size
+    intarray = [x for x in data]
+    imgarray = np.array(intarray,dtype=np.uint8).reshape(width,height,3)
+      
+
+    return imgarray
+
+            
 if __name__ == '__main__':
     app = App()
     app.run()
